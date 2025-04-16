@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>F1 Racing Game - Curved Track</title>
+  <title>F1 Racing Game - All Gray Track</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.2/p5.min.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Racing+Sans+One&display=swap" rel="stylesheet">
   <style>
@@ -54,11 +54,14 @@
   <script>
     let car, boosts = [], obstacles = [], lapStartTime, bestLap = Infinity;
     let pitStop = false, pitStopTime = 0;
-    let trackCenterX = 400, trackCenterY = 300, outerW = 700, outerH = 400, innerW = 500, innerH = 200;
+    let trackCenterX = 400, trackCenterY = 300;
+    let trackPath = [];
 
     function setup() {
       createCanvas(800, 600);
       lapStartTime = millis();
+      createTrackPath();
+
       car = new Car();
       for (let i = 0; i < 5; i++) {
         boosts.push(new Boost());
@@ -91,27 +94,39 @@
       showHUD();
     }
 
+    function createTrackPath() {
+      let angleStep = PI / 20;
+      for (let a = 0; a < TWO_PI; a += angleStep) {
+        let r = 200 + 100 * sin(3 * a); // twistiness
+        let x = trackCenterX + r * cos(a);
+        let y = trackCenterY + r * sin(a);
+        trackPath.push(createVector(x, y));
+      }
+    }
+
     function drawTrack() {
-      fill(100);
-      ellipse(trackCenterX, trackCenterY, outerW, outerH);
-      fill(0, 150, 0);
-      ellipse(trackCenterX, trackCenterY, innerW, innerH);
+      // All-gray track path
+      stroke(100);
+      strokeWeight(80); // full width
+      noFill();
+      beginShape();
+      for (let pt of trackPath) {
+        vertex(pt.x, pt.y);
+      }
+      endShape(CLOSE);
 
       // Finish line
       fill(255);
-      rect(trackCenterX + innerW / 2 - 5, trackCenterY - 25, 10, 50);
+      noStroke();
+      let finish = trackPath[0];
+      rect(finish.x - 5, finish.y - 25, 10, 50);
     }
 
     function isOnTrack(x, y) {
-      let dOuter = distEllipse(x, y, trackCenterX, trackCenterY, outerW / 2, outerH / 2);
-      let dInner = distEllipse(x, y, trackCenterX, trackCenterY, innerW / 2, innerH / 2);
-      return dOuter < 1 && dInner > 1;
-    }
-
-    function distEllipse(x, y, cx, cy, rx, ry) {
-      let dx = (x - cx) / rx;
-      let dy = (y - cy) / ry;
-      return dx * dx + dy * dy;
+      for (let pt of trackPath) {
+        if (dist(x, y, pt.x, pt.y) < 40) return true;
+      }
+      return false;
     }
 
     function keyPressed() {
@@ -124,8 +139,9 @@
 
     class Car {
       constructor() {
-        this.x = trackCenterX - 200;
-        this.y = trackCenterY;
+        let start = trackPath[0];
+        this.x = start.x;
+        this.y = start.y;
         this.angle = 0;
         this.speed = 0;
         this.maxSpeed = 5;
@@ -148,7 +164,8 @@
       }
 
       checkLap() {
-        if (this.x > trackCenterX + innerW / 2 - 5 && abs(this.y - trackCenterY) < 25 && this.speed > 0) {
+        let finish = trackPath[0];
+        if (dist(this.x, this.y, finish.x, finish.y) < 20 && this.speed > 0) {
           let lapTime = (millis() - lapStartTime) / 1000;
           if (lapStartTime > 0) bestLap = min(bestLap, lapTime);
           lapStartTime = millis();
@@ -186,7 +203,7 @@
       checkCollision(car) {
         if (dist(car.x, car.y, this.x, this.y) < 15) {
           car.boostEnd = millis() + 3000;
-          Object.assign(this, new Boost()); // relocate
+          Object.assign(this, new Boost());
         }
       }
     }
