@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>F1 Racing Game - Curved Track</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.2/p5.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Racing+Sans+One&display=swap" rel="stylesheet">
+  <style>
+    body {
+      background-image: url('https://upload.wikimedia.org/wikipedia/commons/thumb/4/45/Chequered_flag.svg/1280px-Chequered_flag.svg.png');
+      background-size: cover;
+      background-attachment: fixed;
+      font-family: 'Arial', sans-serif;
+      color: #ffffff;
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+    }
+    h1 {
+      font-family: 'Racing Sans One', sans-serif;
+      color: #ff0000;
+      background-color: rgba(0, 0, 0, 0.8);
+      padding: 10px;
+      width: 100%;
+      margin: 0;
+    }
+    canvas {
+      border: 2px solid #ff0000;
+      border-radius: 5px;
+      margin: 10px;
+    }
+    p, a {
+      background-color: rgba(0, 0, 0, 0.7);
+      padding: 10px;
+      border-radius: 5px;
+    }
+    a {
+      color: #ff0000;
+      text-decoration: none;
+    }
+    a:hover {
+      color: #ffffff;
+    }
+  </style>
+</head>
+<body>
+  <h1>F1 Racing Game</h1>
+  <p>Use Arrow Keys to drive. Collect green speed boosts, avoid red oil spills. Press 'P' for a pit stop. Cross the finish line to track lap times.</p>
+  <a href="scratch.html">Back to F1 Fan Page</a>
+
+  <script>
+    let car, boosts = [], obstacles = [], lapStartTime, bestLap = Infinity;
+    let pitStop = false, pitStopTime = 0;
+    let trackCenterX = 400, trackCenterY = 300, outerW = 700, outerH = 400, innerW = 500, innerH = 200;
+
+    function setup() {
+      createCanvas(800, 600);
+      lapStartTime = millis();
+      car = new Car();
+      for (let i = 0; i < 5; i++) {
+        boosts.push(new Boost());
+        obstacles.push(new Obstacle());
+      }
+    }
+
+    function draw() {
+      background(0, 150, 0);
+      drawTrack();
+
+      if (!pitStop) {
+        car.update();
+        car.checkLap();
+      } else {
+        if (millis() - pitStopTime > 2000) pitStop = false;
+        fill(255);
+        textSize(20);
+        textAlign(CENTER);
+        text("In Pit Stop!", width / 2, height / 2);
+      }
+
+      car.show();
+
+      boosts.forEach(b => { b.show(); b.checkCollision(car); });
+      obstacles.forEach(o => { o.show(); o.checkCollision(car); });
+
+      if (random() < 0.01) obstacles.push(new Obstacle());
+
+      showHUD();
+    }
+
+    function drawTrack() {
+      fill(100);
+      ellipse(trackCenterX, trackCenterY, outerW, outerH);
+      fill(0, 150, 0);
+      ellipse(trackCenterX, trackCenterY, innerW, innerH);
+
+      // Finish line
+      fill(255);
+      rect(trackCenterX + innerW / 2 - 5, trackCenterY - 25, 10, 50);
+    }
+
+    function isOnTrack(x, y) {
+      let dOuter = distEllipse(x, y, trackCenterX, trackCenterY, outerW / 2, outerH / 2);
+      let dInner = distEllipse(x, y, trackCenterX, trackCenterY, innerW / 2, innerH / 2);
+      return dOuter < 1 && dInner > 1;
+    }
+
+    function distEllipse(x, y, cx, cy, rx, ry) {
+      let dx = (x - cx) / rx;
+      let dy = (y - cy) / ry;
+      return dx * dx + dy * dy;
+    }
+
+    function keyPressed() {
+      if (key === 'p' || key === 'P') {
+        pitStop = true;
+        pitStopTime = millis();
+        car.speed = 0;
+      }
+    }
+
+    class Car {
+      constructor() {
+        this.x = trackCenterX - 200;
+        this.y = trackCenterY;
+        this.angle = 0;
+        this.speed = 0;
+        this.maxSpeed = 5;
+        this.boostSpeed = 8;
+        this.boostEnd = 0;
+      }
+
+      update() {
+        if (keyIsDown(UP_ARROW)) this.speed = min(this.speed + 0.1, this.isBoosted() ? this.boostSpeed : this.maxSpeed);
+        if (keyIsDown(DOWN_ARROW)) this.speed = max(this.speed - 0.1, 0);
+        if (keyIsDown(LEFT_ARROW)) this.angle -= 0.05;
+        if (keyIsDown(RIGHT_ARROW)) this.angle += 0.05;
+
+        this.x += cos(this.angle) * this.speed;
+        this.y += sin(this.angle) * this.speed;
+
+        if (!isOnTrack(this.x, this.y)) {
+          this.speed *= 0.5;
+        }
+      }
+
+      checkLap() {
+        if (this.x > trackCenterX + innerW / 2 - 5 && abs(this.y - trackCenterY) < 25 && this.speed > 0) {
+          let lapTime = (millis() - lapStartTime) / 1000;
+          if (lapStartTime > 0) bestLap = min(bestLap, lapTime);
+          lapStartTime = millis();
+        }
+      }
+
+      show() {
+        push();
+        translate(this.x, this.y);
+        rotate(this.angle);
+        fill(255, 0, 0);
+        rectMode(CENTER);
+        rect(0, 0, 30, 15);
+        pop();
+      }
+
+      isBoosted() {
+        return millis() < this.boostEnd;
+      }
+    }
+
+    class Boost {
+      constructor() {
+        do {
+          this.x = random(100, 700);
+          this.y = random(100, 500);
+        } while (!isOnTrack(this.x, this.y));
+      }
+
+      show() {
+        fill(0, 255, 0);
+        ellipse(this.x, this.y, 10);
+      }
+
+      checkCollision(car) {
+        if (dist(car.x, car.y, this.x, this.y) < 15) {
+          car.boostEnd = millis() + 3000;
+          Object.assign(this, new Boost()); // relocate
+        }
+      }
+    }
+
+    class Obstacle {
+      constructor() {
+        do {
+          this.x = random(100, 700);
+          this.y = random(100, 500);
+        } while (!isOnTrack(this.x, this.y));
+      }
+
+      show() {
+        fill(255, 0, 0);
+        ellipse(this.x, this.y, 10);
+      }
+
+      checkCollision(car) {
+        if (dist(car.x, car.y, this.x, this.y) < 15) {
+          car.speed *= 0.5;
+          Object.assign(this, new Obstacle());
+        }
+      }
+    }
+
+    function showHUD() {
+      textAlign(LEFT);
+      textSize(16);
+      fill(255);
+      text("Lap Time: " + ((millis() - lapStartTime) / 1000).toFixed(2) + "s", 10, 20);
+      text("Best Lap: " + (bestLap === Infinity ? "--" : bestLap.toFixed(2) + "s"), 10, 40);
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,74 @@
+body {
+    background-image: url('https://media.istockphoto.com/id/475069870/photo/background-texture-of-rough-asphalt.jpg?s=612x612&w=0&k=20&c=DYSnUqWteboziJQ-9EVgo1aDZqpwwg8Xjp6hyXFKi_U=');
+    background-size: cover;
+    background-attachment: fixed;
+    font-family: 'Arial', sans-serif;
+    color: #ffffff;
+    margin: 0;
+    padding: 0;
+}
+
+.header {
+    background-color: rgba(0, 0, 0, 0.8);
+    padding: 20px;
+    text-align: center;
+}
+
+.header h1 {
+    font-family: 'Racing Sans One', sans-serif;
+    color: #ff0000;
+    margin: 0;
+}
+
+nav a {
+    color: #ffffff;
+    text-decoration: none;
+    margin: 0 10px;
+}
+
+nav a:hover {
+    color: #ff0000;
+}
+
+.main-content {
+    background-color: rgba(0, 0, 0, 0.7);
+    margin: 20px auto;
+    padding: 20px;
+    width: 80%;
+    border-radius: 10px;
+}
+
+.f1-image {
+    max-width: 100%;
+    height: auto;
+    border: 2px solid #ff0000;
+    border-radius: 5px;
+    margin: 10px 0;
+}
+
+h2, h3 {
+    font-family: 'Racing Sans One', sans-serif;
+    color: #ff0000;
+}
+
+ul, ol {
+    line-height: 1.6;
+}
+
+.tableauPlaceholder {
+    margin: 20px 0;
+}
+
+.footer {
+    background-color: rgba(0, 0, 0, 0.8);
+    text-align: center;
+    padding: 10px;
+    position: relative;
+    bottom: 0;
+    width: 100%;
+}
+
+.footer a {
+    color: #ff0000;
+    text-decoration: none;
+}
